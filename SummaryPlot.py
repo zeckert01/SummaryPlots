@@ -30,6 +30,8 @@ def SummaryPlot(options):
     
     shunts = [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11.5]
 
+    qieList = range(1,17)
+
     #Failing Card Lists
 
     fcard = []
@@ -58,7 +60,10 @@ def SummaryPlot(options):
     #Failure
     failure = False
     FailedCards = {'Card': fcard, 'Ranges': frange, 'Shunts': fshunt}
-
+    
+    # top vs bot igloo
+    top = range(1,9)
+    bot = range(9,17)
 
     #Set Axes Digits
     if(options.all or not options.uid is None):
@@ -93,114 +98,210 @@ def SummaryPlot(options):
         rootout = TFile("data/%s/Run_%s/SummaryPlots/%s/summary_plot_%s.root" %(date, run, name, name), "recreate")
         for r in bins:
             for sh in shunts:
-                if (r == 2 or r == 3) and (sh != 1):
-                    continue
-                # Fetch the values of slope and offset for the corresponding shunt and range
-                values = cursor.execute("select slope,offset from qieshuntparams where range=%i and shunt=%.1f and id = '%s';" % (r, sh,name)).fetchall()
+                #for q in qieList:
+                    if (r == 2 or r == 3) and (sh != 1):
+                        continue
+                    # Fetch the values of slope and offset for the corresponding shunt and range
+                    values = cursor.execute("select slope,offset from qieshuntparams where range=%i and shunt=%.1f and id = '%s' and qie <= %d;" % (r, sh,name,max(top))).fetchall()
 
-                # Fetch Max and minimum values for slope of shunt
-                maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f and id = '%s';" % (r, sh,name)).fetchall()
-                maximum, minimum = maxmin[0]
-                maximums = max(plotBoundaries_slope[1]/sh, maximum+0.01)
-                minimums = min(plotBoundaries_slope[0]/sh, minimum-0.01)
-                #Creates Canvases for each Shunt and Range(TH1D)
-                c.append(TCanvas("Card %s Shunt %.1f  -  Range %i" % (name, sh, r), "histo"))
-                c[-1].Divide(2,1)
-                c[-1].cd(1)
-                #Create Histograms for the shunt slopes
-                histshunt.append(TH1D("SLOPE Sh: %.1f - R: %i" %(sh, r),"%s Shunt %.1f - Range %i" % (name, sh, r), 100, minimums, maximums))
-                histshunt[-1].SetTitle("SLOPE SH: %.1f R: %d"%(sh,r))
-                histshunt[-1].GetXaxis().SetTitle("Slope")
-                histshunt[-1].GetYaxis().SetTitle("Frequency")
-                gPad.SetLogy(1)
-                #Create Histograms for the Offsets
-                maxmin = cursor.execute("select max(offset),min(offset) from qieshuntparams where range=%i and shunt = %.1f and id = '%s';" % (r, sh,name)).fetchall()
-                maximum, minimum = maxmin[0]
-                maximumo  = max(plotBoundaries_offset[r], maximum)
-                minimumo  = min(-1*plotBoundaries_offset[r], minimum)
-
-                c[-1].cd(2)
-                histoffset.append(TH1D("OFFSET Sh: %.1f - R: %i" %(sh, r),"%s Shunt %.1f - Range %d" %(name, sh, r), 40, minimumo, maximumo))
-                histoffset[-1].SetTitle("OFFSET SH: %.1f R: %d"%(sh,r))
-                histoffset[-1].GetXaxis().SetTitle("Offset")
-                histoffset[-1].GetYaxis().SetTitle("Frequency")
-                gPad.SetLogy(1)
-                # Fills the histograms with the values fetched above
-                for val in values:
-                    slope, offset = val
+                    # Fetch Max and minimum values for slope of shunt
+                    maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f and id = '%s' and qie <= %d;" % (r, sh,name,max(top))).fetchall()
+                    maximum, minimum = maxmin[0]
+                    maximums = max(plotBoundaries_slope[1]/sh, maximum+0.01)
+                    minimums = min(plotBoundaries_slope[0]/sh, minimum-0.01)
+                    #Creates Canvases for each Shunt and Range(TH1D)
+                    c.append(TCanvas("Card %s Shunt %.1f  -  Range %i Top_Igloo" % (name, sh,r ), "histo"))
+                    c[-1].Divide(2,1)
                     c[-1].cd(1)
-                    histshunt[-1].Fill(slope)
-                    histshunt[-1].Draw()
+                    #Create Histograms for the shunt slopes
+                    histshunt.append(TH1D("SLOPE Sh: %.1f - R: %i_%s" %(sh, r,"Top_Igloo"),"%s Shunt %.1f - Range %i %s" % (name, sh, r,"Top Igloo"), 100, minimums, maximums))
+                    histshunt[-1].GetXaxis().SetTitle("Slope")
+                    histshunt[-1].GetYaxis().SetTitle("Frequency")
+                    gPad.SetLogy(1)
+                    #Create Histograms for the Offsets
+                    maxmin = cursor.execute("select max(offset),min(offset) from qieshuntparams where range=%i and shunt = %.1f and id = '%s'and qie <= %d;" % (r, sh,name,max(top))).fetchall()
+                    maximum, minimum = maxmin[0]
+                    maximumo  = max(plotBoundaries_offset[r], maximum)
+                    minimumo  = min(-1*plotBoundaries_offset[r], minimum)
+
                     c[-1].cd(2)
-                    histoffset[-1].Fill(offset)
-                    histoffset[-1].Draw()
-                # Write the histograms to the file, saving them for later
-                # histshunt[-1].Draw()
-                # histoffset[-1].Draw()
-                # c2[-1].Write()
-                c[-1].Update()
-                #c[-1].SaveAs("data/%s/Run_%s/SummaryPlots/ImagesOutput/CARD_%s_SHUNT_%s_RANGE_%i.png"%(date, run, name, str(sh).replace(".",""), r))
-                
-                c[-1].Print("data/%s/Run_%s/SummaryPlots/%s/ImagesOutput/%s_SHUNT_%s_RANGE_%i.png"%(date, run, name,name, str(sh).replace(".",""), r))
-                c[-1].Write()
-                maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f and id= '%s';" % (r, sh,name)).fetchall()
-                maximum , minimum = maxmin[0]
-                if sh == 1:
-                    if 0.283 > minimum or maximum > 0.326:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 1.5:
-                    if 0.185 > minimum or maximum > 0.22:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 2:
-                    if 0.143 > minimum or maximum > 0.168:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 3:
-                    if 0.095 > minimum or maximum > 0.115:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 4:
-                    if 0.072 > minimum or maximum > 0.085:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 5:
-                    if 0.0575 > minimum or maximum > 0.068:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 6:
-                    if 0.048 > minimum or maximum > 0.064:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 7:
-                    if 0.041 > minimum or maximum > 0.05:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 8:
-                    if 0.036 > minimum or maximum > 0.044:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 9:
-                    if 0.032 > minimum or maximum > 0.039:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 10:
-                    if 0.029 > minimum or maximum > 0.035:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 11:
-                    if 0.026 > minimum or maximum > 0.032:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if sh == 11.5:
-                    if 0.025 > minimum or maximum > 0.031:
-                        print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
-                        failure = True
-                if failure:
-                    FailedCards['Card'].append(name)
-                    FailedCards['Shunts'].append(sh)
-                    FailedCards['Ranges'].append(r)
+                    histoffset.append(TH1D("OFFSET Sh: %.1f - R: %i_%s" %(sh, r,"Top_Igloo"),"%s Shunt %.1f - Range %d %s" %(name, sh, r,"Top Igloo"), 40, minimumo, maximumo))
+                    histoffset[-1].GetXaxis().SetTitle("Offset")
+                    histoffset[-1].GetYaxis().SetTitle("Frequency")
+                    gPad.SetLogy(1)
+                    # Fills the histograms with the values fetched above
+                    for val in values:
+                        slope, offset = val
+                        c[-1].cd(1)
+                        histshunt[-1].Fill(slope)
+                        histshunt[-1].Draw()
+                        c[-1].cd(2)
+                        histoffset[-1].Fill(offset)
+                        histoffset[-1].Draw()
+                    # Write the histograms to the file, saving them for later
+                    # histshunt[-1].Draw()
+                    # histoffset[-1].Draw()
+                    # c2[-1].Write()
+
+                     
+                    c[-1].Update()
+                    #c[-1].SaveAs("data/%s/Run_%s/SummaryPlots/ImagesOutput/CARD_%s_SHUNT_%s_RANGE_%i.png"%(date, run, name, str(sh).replace(".",""), r))
+                    c[-1].Print("data/%s/Run_%s/SummaryPlots/%s/ImagesOutput/%s_SHUNT_%s_RANGE_%i_%s.png"%(date, run, name,name, str(sh).replace(".",""), r,"Top_Igloo"))
+                    c[-1].Write()
+                    maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f and id= '%s' and qie <= %d;" % (r, sh,name,max(top))).fetchall()
+                    maximum , minimum = maxmin[0]
+                    if sh == 1:
+                        if 0.283 > minimum or maximum > 0.326:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 1.5:
+                        if 0.185 > minimum or maximum > 0.22:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 2:
+                        if 0.143 > minimum or maximum > 0.168:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 3:
+                        if 0.095 > minimum or maximum > 0.115:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 4:
+                        if 0.072 > minimum or maximum > 0.085:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 5:
+                        if 0.0575 > minimum or maximum > 0.068:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 6:
+                        if 0.048 > minimum or maximum > 0.064:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 7:
+                        if 0.041 > minimum or maximum > 0.05:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 8:
+                        if 0.036 > minimum or maximum > 0.044:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 9:
+                        if 0.032 > minimum or maximum > 0.039:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 10:
+                        if 0.029 > minimum or maximum > 0.035:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 11:
+                        if 0.026 > minimum or maximum > 0.032:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 11.5:
+                        if 0.025 > minimum or maximum > 0.031:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if failure:
+                        FailedCards['Card'].append(name)
+                        FailedCards['Shunts'].append(sh)
+                        FailedCards['Ranges'].append(r)
+
+                    # Fetch the values of slope and offset for the corresponding shunt and range
+                    values = cursor.execute("select slope,offset from qieshuntparams where range=%i and shunt=%.1f and id = '%s' and qie > %d;" % (r, sh,name,max(top))).fetchall()
+
+                    #Creates Canvases for each Shunt and Range(TH1D)
+                    c.append(TCanvas("Card %s Shunt %.1f  -  Range %i Bot_Igloo" % (name, sh, r), "histo"))
+                    c[-1].Divide(2,1)
+                    c[-1].cd(1)
+                    #Create Histograms for the shunt slopes
+                    histshunt.append(TH1D("SLOPE Sh: %.1f - R: %i_%s" %(sh, r,"Bot_Igloo"),"%s Shunt %.1f - Range %i %s" % (name, sh, r,"Bot Igloo"), 100, minimums, maximums))
+                    histshunt[-1].GetXaxis().SetTitle("Slope")
+                    histshunt[-1].GetYaxis().SetTitle("Frequency")
+                    gPad.SetLogy(1)
+                    #Create Histograms for the Offsets
+                    c[-1].cd(2)
+                    histoffset.append(TH1D("OFFSET Sh: %.1f - R: %i_%s" %(sh, r,"Bot_Igloo"),"%s Shunt %.1f - Range %d %s" %(name, sh, r,"Bot Igloo"), 40, minimumo, maximumo))
+                    histoffset[-1].GetXaxis().SetTitle("Offset")
+                    histoffset[-1].GetYaxis().SetTitle("Frequency")
+                    gPad.SetLogy(1)
+                    # Fills the histograms with the values fetched above
+                    for val in values:
+                        slope, offset = val
+                        c[-1].cd(1)
+                        histshunt[-1].Fill(slope)
+                        histshunt[-1].Draw()
+                        c[-1].cd(2)
+                        histoffset[-1].Fill(offset)
+                        histoffset[-1].Draw()
+                    # Write the histograms to the file, saving them for later
+                    # histshunt[-1].Draw()
+                    # histoffset[-1].Draw()
+                    # c2[-1].Write()
+
+                     
+                    c[-1].Update()
+                    #c[-1].SaveAs("data/%s/Run_%s/SummaryPlots/ImagesOutput/CARD_%s_SHUNT_%s_RANGE_%i.png"%(date, run, name, str(sh).replace(".",""), r))
+                    c[-1].Print("data/%s/Run_%s/SummaryPlots/%s/ImagesOutput/%s_SHUNT_%s_RANGE_%i_%s.png"%(date, run, name,name, str(sh).replace(".",""), r,"Bot_Igloo"))
+                    c[-1].Write()
+                    maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f and id= '%s' and qie > %d;" % (r, sh,name,max(top))).fetchall()
+                    maximum , minimum = maxmin[0]
+                    if sh == 1:
+                        if 0.283 > minimum or maximum > 0.326:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 1.5:
+                        if 0.185 > minimum or maximum > 0.22:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 2:
+                        if 0.143 > minimum or maximum > 0.168:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 3:
+                        if 0.095 > minimum or maximum > 0.115:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 4:
+                        if 0.072 > minimum or maximum > 0.085:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 5:
+                        if 0.0575 > minimum or maximum > 0.068:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 6:
+                        if 0.048 > minimum or maximum > 0.064:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 7:
+                        if 0.041 > minimum or maximum > 0.05:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 8:
+                        if 0.036 > minimum or maximum > 0.044:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 9:
+                        if 0.032 > minimum or maximum > 0.039:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 10:
+                        if 0.029 > minimum or maximum > 0.035:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 11:
+                        if 0.026 > minimum or maximum > 0.032:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if sh == 11.5:
+                        if 0.025 > minimum or maximum > 0.031:
+                            print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
+                            failure = True
+                    if failure:
+                        FailedCards['Card'].append(name)
+                        FailedCards['Shunts'].append(sh)
+                        FailedCards['Ranges'].append(r)
             countbin = 0
         rootout.Close()
         if len(FailedCards)>1:

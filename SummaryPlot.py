@@ -19,10 +19,6 @@ plotBoundaries_slope = [0.28, 0.33]
 
 plotBoundaries_offset = [1, 16, 100, 800]
 
-#FINDING ERROR PERCENTAGE
-thshunt= .30
-THRESHOLD = .1
-
 
 def SummaryPlot(options):
 
@@ -34,7 +30,7 @@ def SummaryPlot(options):
 
     #Bin Definitions
     bins = [0, 1, 2, 3]
-
+    
     shunts = [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11.5]
 
     #Failing Card Lists
@@ -77,8 +73,8 @@ def SummaryPlot(options):
         for f in options.dbnames:
             files.append(glob.glob("data/%s/Run_%s/%s"%(date,run,f))[0])
             print files
-    MergeDatabases(files, "data/%s/Run_%s/"%(date, run),"MergedDatabaseRun%s.db"%run)
-    xyz1234 = sqlite3.connect("data/%s/Run_%s/MergedDatabaseRun%s.db"%(date, run,run))
+    MergeDatabases(files, "data/%s/Run_%s/"%(date, run))
+    xyz1234 = sqlite3.connect("data/%s/Run_%s/mergedDatabase.db"%(date, run))
     cursor = xyz1234.cursor()
     TGaxis.SetMaxDigits(3)
     #files = cursor.excute("Select distinct runDirectory from qieshuntparams").Fetchall()
@@ -86,7 +82,7 @@ def SummaryPlot(options):
     #if (options.all):
     for nameList in idlist:
         name = nameList[0]
-
+        
         if not options.uid is None:
             if name not in options.uid:
                 continue
@@ -195,55 +191,55 @@ def SummaryPlot(options):
                 maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f and id= '%s';" % (r, sh,name)).fetchall()
                 maximum , minimum = maxmin[0]
                 if sh == 1:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.283 > minimum or maximum > 0.326:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 1.5:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.185 > minimum or maximum > 0.22:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 2:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.143 > minimum or maximum > 0.168:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 3:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.095 > minimum or maximum > 0.115:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 4:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.072 > minimum or maximum > 0.085:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 5:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.0575 > minimum or maximum > 0.068:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 6:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.048 > minimum or maximum > 0.064:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 7:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.041 > minimum or maximum > 0.05:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 8:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.036 > minimum or maximum > 0.044:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 9:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.032 > minimum or maximum > 0.039:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 10:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.029 > minimum or maximum > 0.035:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 11:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.026 > minimum or maximum > 0.032:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if sh == 11.5:
-                    if ((thshunt/sh)-(thshunt/sh)*THRESHOLD) > minimum or maximum > ((thshunt/sh)+(thshunt/sh)*THRESHOLD):
+                    if 0.025 > minimum or maximum > 0.031:
                         print "Card %s in Shunt %.1f in Range %i failed" % (name, sh, r)
                         failure = True
                 if failure:
@@ -461,4 +457,16 @@ if __name__ == "__main__":
     parser.add_argument('--noImages',action="store_false",dest="images",default=True,help="Do not save images")
     parser.add_argument('--verbose',action="store_true",dest="verbose",default=False,help="Print progress messages")
     options = parser.parse_args()
-    SummaryPlot(options)
+    date = options.date[0]
+    run = options.run[0]
+    all = options.all
+    total = options.all
+    if len(dbnames)!=0:
+        arg = 'f'
+    elif len(uid)!=0:
+        arg = 'u'
+    elif all:
+        arg = 'a'
+    elif total:
+        arg = 't'
+    print SummaryPlot(options)

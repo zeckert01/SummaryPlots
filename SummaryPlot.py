@@ -264,14 +264,16 @@ def SummaryPlot(options):
             os.makedirs("data/%s/Run_%s/SummaryPlots/TotalOutput"%(date,run))
             # Modify rootout change title of output ROOT file
         rootout = TFile("data/%s/Run_%s/SummaryPlots/summary_plot_total.root" %(date, run), "recreate")
-        for r in bins:
-            for sh in shunts:
+        for ra in bins:
+            r = ra[0]
+            for shu in shunts:
+                sh = shu[0]
                 if (r == 2 or r == 3) and (sh != 1):
                     continue
                 # Fetch the values of slope and offset for the corresponding shunt and range
                 #values = cursor.execute("select slope,offset from qieshuntparams where range=%i and shunt=%.1f ;" % (r, sh)).fetchall()
                 
-                values = cursor.execute("select slope,offset, (SELECT slope from qieshuntparams where id=p.id and qie=p.qie and capID=p.capID and range=p.range and shunt=1) from qieshuntparams as p where range = %i and shunt = %.1f;"%(r,sh)).fetchall()
+                values = cursor.execute("select qie,slope,offset, (SELECT slope from qieshuntparams where id=p.id and qie=p.qie and capID=p.capID and range=p.range and shunt=1) from qieshuntparams as p where range = %i and shunt = %.1f;"%(r,sh)).fetchall()
                 # Fetch Max and minimum values for slope of shunt
                 maxmin = cursor.execute("select max(slope),min(slope) from qieshuntparams where range=%i and shunt = %.1f;" % (r, sh)).fetchall()
                 maximum, minimum = maxmin[0]
@@ -315,15 +317,22 @@ def SummaryPlot(options):
                 histoffset[-1].GetXaxis().SetTitle("Offset")
                 histoffset[-1].GetYaxis().SetTitle("Frequency")
                 gPad.SetLogy(1)
+
+                if(options.slVqie):
+                    histSlvQie.append(TH2D("SlopeVsQIE_Shunt_%s_Range_%d"%(str(sh).replace(".",""),r),"Slope Vs QIE Shunt %.1f Range %d"%(sh,r),16,0.5,16.5,40,minimums,maximums))
+                    histSlvQie[-1].GetXaxis().SetTitle("QIE")
+                    histSlvQie[-1].GetYaxis().SetTitle("Slope")
                 # Fills the histograms with the values fetched above
                 for val in values:
-                    slope, offset, slSh1 = val
+                    qie,slope, offset, slSh1 = val
                     c[-1].cd(1)
                     histshunt[-1].Fill(slope)
                     histshunt[-1].Draw()
                     c[-1].cd(2)
                     histoffset[-1].Fill(offset)
                     histoffset[-1].Draw()
+                    if(options.slVqie):
+                        histSlvQie[-1].Fill(qie,slope)
                     if(options.hist2D):
                         histSlopeNvSlope1[-1].Fill(slSh1,slope)
                     if(options.shFac):
@@ -342,6 +351,8 @@ def SummaryPlot(options):
                 c[-1].Write()
                 if(options.hist2D):
                     histSlopeNvSlope1[-1].Write()
+                if(options.slVqie):
+                    histSlvQie[-1].Write()
                 if(options.shFac):
                     histShuntFactor[-1].Write()
                 if(options.verbose):
